@@ -1,0 +1,11 @@
+version: '3'
+services:
+  db:
+    image: postgres
+  web:
+    build: .
+    command: test-chest makemigrations && test-chest migrate && test-chest runserver 0.0.0.0:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
