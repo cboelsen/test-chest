@@ -27,7 +27,8 @@ class TestCaseSerialiser(serializers.HyperlinkedModelSerializer):
         model = TestCase
         fields = (
             'id', 'name', 'classname', 'failure_message', 'traceback',
-            'file', 'line', 'time', 'uploaded', 'tags',
+            'file', 'line', 'time', 'uploaded', 'additional', 'tags',
+            'testsuite',
         )
 
 

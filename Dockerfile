@@ -19,8 +19,6 @@ WORKDIR /tmp/test-chest-install-files
 RUN pip3 install .
 
 RUN cp -af files/supervisor /etc/ && cp files/nginx.conf /etc/nginx/ && cp files/run_server_dev.sh /usr/local/bin/
-
-RUN test-chest makemigrations --check --noinput --settings test_chest_project.test_chest_project.settings.dev
 RUN test-chest collectstatic --noinput --clear --settings test_chest_project.test_chest_project.settings.dev
 
 ENTRYPOINT ["/usr/local/bin/run_server_dev.sh"]

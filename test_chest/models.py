@@ -1,10 +1,11 @@
 import uuid
 
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, unique=True)
 
     def __str__(self):
         return 'Tag("{}")'.format(self.name)
@@ -32,7 +33,9 @@ class TestCase(models.Model):
     failure_message = models.TextField(null=True, blank=True)
     traceback = models.TextField(null=True, blank=True)
 
-    tags = models.ManyToManyField(Tag, related_name='tests')
+    additional = JSONField(null=True)
+
+    tags = models.ManyToManyField(Tag, related_name='tests', null=True)
     testsuite = models.ForeignKey(TestSuite, related_name='tests')
 
     def __str__(self):

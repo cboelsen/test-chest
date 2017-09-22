@@ -2,10 +2,18 @@ version: '3'
 services:
   db:
     image: postgres
+    environment: &PG_ENV
+        POSTGRES_USER: test_chest
+        POSTGRES_PASSWORD: postgres_password
+    volumes:
+      - ${PWD}/db:/var/lib/postgresql/data
   web:
     build: .
-    command: test-chest makemigrations && test-chest migrate && test-chest runserver 0.0.0.0:3000
     ports:
-      - "3000:3000"
+      - "3456:80"
+    environment:
+        <<: *PG_ENV
     depends_on:
       - db
+    volumes:
+      - ${PWD}/test_chest/migrations:/usr/local/lib/python3.5/dist-packages/test_chest/migrations/
