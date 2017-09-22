@@ -6,7 +6,7 @@ services:
         POSTGRES_USER: test_chest
         POSTGRES_PASSWORD: postgres_password
     volumes:
-      - ${PWD}/db:/var/lib/postgresql/data
+      - ./db:/var/lib/postgresql/data
   web:
     build: .
     ports:
@@ -16,4 +16,4 @@ services:
     depends_on:
       - db
     volumes:
-      - ${PWD}/test_chest/migrations:/usr/local/lib/python3.5/dist-packages/test_chest/migrations/
+      - ./test_chest/migrations:/usr/local/lib/python3.5/dist-packages/test_chest/migrations/

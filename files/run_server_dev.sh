@@ -1,7 +1,7 @@
 #!/bin/bash
 
 dbcheck() {
-    alias db-check='test-chest shell -c "from django.db import connections;conn = connections['default']; conn.cursor()" >& /dev/null'
+    test-chest shell -c "from django.db import connections;conn = connections['default']; conn.cursor()" >& /dev/null
 }
 
 dbcheck

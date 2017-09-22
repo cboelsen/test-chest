@@ -1,5 +1,11 @@
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import FieldError
+
 from rest_framework import filters, viewsets
+from rest_framework.decorators import detail_route, list_route
+from rest_framework.exceptions import ParseError
+
+import xml.etree.ElementTree
 
 from .models import Tag, TestCase, TestSuite
 from .serializers import (
@@ -10,20 +16,15 @@ from .serializers import (
 
 class FilteringModelViewSet(viewsets.ModelViewSet):
 
-    # def get_serializer_context(self):
-    #     return {
-    #         'request': None,
-    #         'format': self.format_kwarg,
-    #         'view': self,
-    #     }
-
     def get_queryset(self):
         filters = self.request.query_params.dict()
-        build_query = Q()
         for filter_name in ['ordering', 'limit', 'offset']:
             if filter_name in filters:
                 del filters[filter_name]
-        return self.queryset.filter(build_query, **filters).distinct()
+        try:
+            return self.queryset.filter(**filters).distinct()
+        except FieldError as error:
+            raise ParseError(error.args)
 
 
 class UserViewSet(FilteringModelViewSet):
@@ -68,3 +69,28 @@ class TestSuiteViewSet(FilteringModelViewSet):
     serializer_class = TestSuiteSerialiser
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = ('name', 'time', 'uploaded')
+
+    @list_route(methods=['post'])
+    def upload_junit_xml(self, request):
+        suites = []
+        for xml_file in request.FILES:
+            e = xml.etree.ElementTree.fromstring(xml_file.read()).getroot()
+            if isinstance(xml, JUnitXmlWithString):
+                suites = [s for s in xml]
+            else:
+                suites = [xml]
+            for s in e.findall('testsuite'):
+                suite = TestSuite(name=s.get('name'), time=s.get('time'))
+                suite.save()
+                for c in s.findall('testcase'):
+                    # TODO: Parse <failure message=""> and get traceback
+                    TestCase(
+                        name=c.get('name'),
+                        classname=c.get('classname'),
+                        time=c.get('time'),
+                        file=c.get('file'),
+                        line=c.get('line'),
+                        testsuite=suite,
+                    ).save()
+            suites.append(suite)
+        return Response(TestSuiteSerializer(suites, many=True).data)
