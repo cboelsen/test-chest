@@ -8,7 +8,7 @@ class Tag(models.Model):
     name = models.CharField(max_length=64, unique=True)
 
     def __str__(self):
-        return 'Tag("{}")'.format(self.name)
+        return 'Tag({})'.format(self.name)
 
 
 class TestSuite(models.Model):

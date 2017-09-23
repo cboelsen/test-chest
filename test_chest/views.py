@@ -4,13 +4,14 @@ from django.core.exceptions import FieldError
 from rest_framework import filters, viewsets
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.exceptions import ParseError
+from rest_framework.response import Response
 
 import xml.etree.ElementTree
 
 from .models import Tag, TestCase, TestSuite
 from .serializers import (
-    UserSerializer, GroupSerializer, TagSerialiser, TestCaseSerialiser,
-    TestSuiteSerialiser,
+    UserSerializer, GroupSerializer, TagSerializer, TestCaseSerializer,
+    TestSuiteSerializer,
 )
 
 
@@ -49,14 +50,14 @@ class GroupViewSet(FilteringModelViewSet):
 
 class TagViewSet(FilteringModelViewSet):
     queryset = Tag.objects.all().order_by('name')
-    serializer_class = TagSerialiser
+    serializer_class = TagSerializer
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = ('name')
 
 
 class TestCaseViewSet(FilteringModelViewSet):
     queryset = TestCase.objects.all().order_by('uploaded')
-    serializer_class = TestCaseSerialiser
+    serializer_class = TestCaseSerializer
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = (
         'name', 'classname', 'file', 'line', 'time', 'uploaded', 'tags',
@@ -66,20 +67,19 @@ class TestCaseViewSet(FilteringModelViewSet):
 
 class TestSuiteViewSet(FilteringModelViewSet):
     queryset = TestSuite.objects.all().order_by('uploaded')
-    serializer_class = TestSuiteSerialiser
+    serializer_class = TestSuiteSerializer
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = ('name', 'time', 'uploaded')
 
     @list_route(methods=['post'])
     def upload_junit_xml(self, request):
         suites = []
-        for xml_file in request.FILES:
-            e = xml.etree.ElementTree.fromstring(xml_file.read()).getroot()
-            if isinstance(xml, JUnitXmlWithString):
-                suites = [s for s in xml]
-            else:
-                suites = [xml]
-            for s in e.findall('testsuite'):
+        for _, fp in request.FILES.items():
+            e = xml.etree.ElementTree.fromstring(fp.read())
+            xml_suites = list(e.findall('testsuite'))
+            if not xml_suites:
+                xml_suites = [e]
+            for s in xml_suites:
                 suite = TestSuite(name=s.get('name'), time=s.get('time'))
                 suite.save()
                 for c in s.findall('testcase'):
@@ -92,5 +92,5 @@ class TestSuiteViewSet(FilteringModelViewSet):
                         line=c.get('line'),
                         testsuite=suite,
                     ).save()
-            suites.append(suite)
-        return Response(TestSuiteSerializer(suites, many=True).data)
+                suites.append(suite)
+        return Response(TestSuiteSerializer(suites, context={'request': request}, many=True).data)

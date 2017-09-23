@@ -1,0 +1,8 @@
+CHANGES
+=======
+
+* Add untested junit xml file upload endpoint
+* Use a postgres database for the JSONField
+* Start nginx when running the web app in docker
+* Initial code dump
+* Initial commit

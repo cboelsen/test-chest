@@ -16,13 +16,13 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name')
 
 
-class TagSerialiser(serializers.HyperlinkedModelSerializer):
+class TagSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Tag
         fields = ('name', 'tests')
 
 
-class TestCaseSerialiser(serializers.HyperlinkedModelSerializer):
+class TestCaseSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = TestCase
         fields = (
@@ -32,7 +32,7 @@ class TestCaseSerialiser(serializers.HyperlinkedModelSerializer):
         )
 
 
-class TestSuiteSerialiser(serializers.HyperlinkedModelSerializer):
+class TestSuiteSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = TestSuite
         fields = ('id', 'name', 'time', 'uploaded', 'tests')
