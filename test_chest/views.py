@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 import xml.etree.ElementTree
 
-from .models import Tag, TestCase, TestSuite
+from .models import Tag, TestCase, TestSuite, Result
 from .serializers import (
     UserSerializer, GroupSerializer, TagSerializer, TestCaseSerializer,
     TestSuiteSerializer,
@@ -18,7 +18,7 @@ from .serializers import (
 class FilteringModelViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
-        filters = self.request.query_params.dict()
+        filters = self.request.query_params.dict().copy()
         for filter_name in ['ordering', 'limit', 'offset']:
             if filter_name in filters:
                 del filters[filter_name]
@@ -49,7 +49,7 @@ class GroupViewSet(FilteringModelViewSet):
 
 
 class TagViewSet(FilteringModelViewSet):
-    queryset = Tag.objects.all().order_by('name')
+    queryset = Tag.objects.all().order_by('name').distinct()
     serializer_class = TagSerializer
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = ('name')
@@ -83,14 +83,27 @@ class TestSuiteViewSet(FilteringModelViewSet):
                 suite = TestSuite(name=s.get('name'), time=s.get('time'))
                 suite.save()
                 for c in s.findall('testcase'):
-                    # TODO: Parse <failure message=""> and get traceback
-                    TestCase(
+                    tc = TestCase(
                         name=c.get('name'),
                         classname=c.get('classname'),
                         time=c.get('time'),
                         file=c.get('file'),
                         line=c.get('line'),
                         testsuite=suite,
-                    ).save()
+                    )
+                    # TODO: XFAIL, ERROR...
+                    failure = c.find('failure')
+                    skipped = c.find('skipped')
+                    if failure is not None:
+                        tc.result = Result.FAIL
+                        tc.message = failure.get('message')
+                        tc.traceback = failure.text
+                    elif skipped is not None:
+                        tc.result = Result.SKIP
+                        tc.message = skipped.get('message')
+                        tc.traceback = skipped.text
+                    else:
+                        tc.result = Result.PASS
+                    tc.save()
                 suites.append(suite)
         return Response(TestSuiteSerializer(suites, context={'request': request}, many=True).data)

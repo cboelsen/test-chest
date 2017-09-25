@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Add unit tests
 * Add untested junit xml file upload endpoint
 * Use a postgres database for the JSONField
 * Start nginx when running the web app in docker

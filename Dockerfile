@@ -10,15 +10,16 @@ RUN apt-get update && apt-key update && apt-get install -y \
 
 COPY requirements.txt /tmp/
 
-RUN pip3 install -U pip setuptools pbr && \
+RUN pip3 install -U pip setuptools pbr tox && \
     pip3 install -r /tmp/requirements.txt && \
     rm /root/.cache/pip/wheels/* -rf
 
 COPY . /tmp/test-chest-install-files
 WORKDIR /tmp/test-chest-install-files
+RUN cp -af files/supervisor /etc/ && cp files/nginx.conf /etc/nginx/ && cp files/run_server_dev.sh /usr/local/bin/
+RUN tox
 RUN pip3 install .
 
-RUN cp -af files/supervisor /etc/ && cp files/nginx.conf /etc/nginx/ && cp files/run_server_dev.sh /usr/local/bin/
 RUN test-chest collectstatic --noinput --clear --settings test_chest_project.test_chest_project.settings.dev
 
 ENTRYPOINT ["/usr/local/bin/run_server_dev.sh"]
