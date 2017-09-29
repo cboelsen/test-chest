@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import FieldError
 
@@ -71,9 +73,48 @@ class TestSuiteViewSet(FilteringModelViewSet):
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = ('name', 'time', 'uploaded')
 
+    def _get_tags(self, request):
+        tags = []
+        if 'tags' in request.POST:
+            tag_names = json.loads(request.POST['tags'])
+            for tname in tag_names:
+                tag = Tag(name=tname)
+                tag.save()
+                tags.append(tag)
+        return tags
+
+    def _create_test_case(self, test_case_xml, testsuite, tags):
+        tc = TestCase(
+            name=test_case_xml.get('name'),
+            classname=test_case_xml.get('classname'),
+            time=test_case_xml.get('time'),
+            file=test_case_xml.get('file'),
+            line=test_case_xml.get('line'),
+            testsuite=testsuite,
+        )
+        # TODO: XFAIL, ERROR...
+        failure = test_case_xml.find('failure')
+        skipped = test_case_xml.find('skipped')
+        if failure is not None:
+            tc.result = Result.FAIL
+            tc.message = failure.get('message')
+            tc.traceback = failure.text
+        elif skipped is not None:
+            tc.result = Result.SKIP
+            tc.message = skipped.get('message')
+            tc.traceback = skipped.text
+        else:
+            tc.result = Result.PASS
+        tc.save()
+        if tags:
+            tc.tags = tags
+        return tc
+
     @list_route(methods=['post'])
     def upload_junit_xml(self, request):
         suites = []
+        cases = []
+        tags = self._get_tags(request)
         for _, fp in request.FILES.items():
             e = xml.etree.ElementTree.fromstring(fp.read())
             xml_suites = list(e.findall('testsuite'))
@@ -83,27 +124,6 @@ class TestSuiteViewSet(FilteringModelViewSet):
                 suite = TestSuite(name=s.get('name'), time=s.get('time'))
                 suite.save()
                 for c in s.findall('testcase'):
-                    tc = TestCase(
-                        name=c.get('name'),
-                        classname=c.get('classname'),
-                        time=c.get('time'),
-                        file=c.get('file'),
-                        line=c.get('line'),
-                        testsuite=suite,
-                    )
-                    # TODO: XFAIL, ERROR...
-                    failure = c.find('failure')
-                    skipped = c.find('skipped')
-                    if failure is not None:
-                        tc.result = Result.FAIL
-                        tc.message = failure.get('message')
-                        tc.traceback = failure.text
-                    elif skipped is not None:
-                        tc.result = Result.SKIP
-                        tc.message = skipped.get('message')
-                        tc.traceback = skipped.text
-                    else:
-                        tc.result = Result.PASS
-                    tc.save()
+                    self._create_test_case(c, suite, tags)
                 suites.append(suite)
         return Response(TestSuiteSerializer(suites, context={'request': request}, many=True).data)
