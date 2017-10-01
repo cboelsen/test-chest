@@ -16,4 +16,4 @@ services:
     depends_on:
       - db
     volumes:
-      - ./test_chest/migrations:/usr/local/lib/python3.5/dist-packages/test_chest/migrations/
+      - ./test_chest/migrations:/var/lib/test-chest-env/lib/python3.5/site-packages/test_chest/migrations
