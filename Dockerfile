@@ -27,13 +27,13 @@ RUN apk update && \
 COPY --from=build /var/lib/test-chest-env /var/lib/test-chest-env
 
 COPY files/ /tmp/files
-RUN cp -af /tmp/files/supervisor /etc/ && \
-    cp /tmp/files/nginx.conf /etc/nginx/ && \
-    cp /tmp/files/run_server_dev.py /var/lib/test-chest-env/bin/
+RUN mv /tmp/files/supervisor /etc/ && \
+    mv /tmp/files/nginx.conf /etc/nginx/ && \
+    mv /tmp/files/run_server_dev.py /var/lib/test-chest-env/bin/
 
 RUN /var/lib/test-chest-env/bin/test-chest collectstatic \
     --noinput \
     --clear \
     --settings test_chest_project.test_chest_project.settings.dev
 
-ENTRYPOINT ["/var/lib/test-chest-env/bin/python", "/var/lib/test-chest-env/bin/run_server_dev.py"]
+ENTRYPOINT ["/var/lib/test-chest-env/bin/python", "-u", "/var/lib/test-chest-env/bin/run_server_dev.py"]

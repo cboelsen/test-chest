@@ -1,4 +1,5 @@
 import django
+import logging
 import os
 import subprocess
 import sys
@@ -11,6 +12,7 @@ def test_db_connection():
 
 
 def wait_for_connection():
+    logging.info('Waiting for database connection...')
     while True:
         try:
             test_db_connection()
@@ -21,6 +23,7 @@ def wait_for_connection():
 
 
 def migrate_to_latest_models():
+    logging.info('Running migrations...')
     settings = ['--settings', os.environ['DJANGO_SETTINGS_MODULE']]
     cmd = '/var/lib/test-chest-env/bin/test-chest'
     # PRODUCTION VERSION:
@@ -30,6 +33,7 @@ def migrate_to_latest_models():
 
 
 def create_test_user():
+    logging.info('Creating test users...')
     from django.contrib.auth.models import User
     u, _ = User.objects.get_or_create(username='test')
     u.set_password('test')
@@ -38,15 +42,20 @@ def create_test_user():
 
 
 def run_nginx_in_background():
+    logging.info('Starting nginx...')
     os.mkdir('/run/nginx')
     subprocess.Popen(['nginx'])
 
 
 def run_supervisor():
+    logging.info('Running supervisord...')
     return subprocess.call(['supervisord', '-c', '/etc/supervisor/supervisord.conf'])
 
 
 def main():
+    log_format = '[RUN SERVER] %(asctime)-15s: %(levelname)+8s  %(message)s'
+    log_kwargs = {'format': log_format, 'level': logging.INFO}
+    logging.basicConfig(**log_kwargs)
     os.environ['DJANGO_SETTINGS_MODULE'] = 'test_chest_project.test_chest_project.settings.dev'
     django.setup()
     wait_for_connection()
