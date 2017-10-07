@@ -26,10 +26,9 @@ RUN apk update && \
 
 COPY --from=build /var/lib/test-chest-env /var/lib/test-chest-env
 
-COPY files/ /tmp/files
-RUN mv /tmp/files/supervisor /etc/ && \
-    mv /tmp/files/nginx.conf /etc/nginx/ && \
-    mv /tmp/files/run_server_dev.py /var/lib/test-chest-env/bin/
+COPY files/supervisor /etc/supervisor
+COPY files/nginx.conf /etc/nginx/
+COPY files/run_server_dev.py /var/lib/test-chest-env/bin/
 
 RUN /var/lib/test-chest-env/bin/test-chest collectstatic \
     --noinput \

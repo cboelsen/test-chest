@@ -9,11 +9,20 @@ services:
       - ./db:/var/lib/postgresql/data
   web:
     build: .
-    ports:
-      - "3456:80"
     environment:
         <<: *PG_ENV
     depends_on:
       - db
     volumes:
       - ./test_chest/migrations:/var/lib/test-chest-env/lib/python3.5/site-packages/test_chest/migrations
+    labels:
+      - "traefik.backend=test-chest-backend"
+      - "traefik.frontend.rule=Host: localhost"
+      - "traefik.port=80"
+  proxy:
+    image: traefik
+    ports:
+      - 3456:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --docker --loglevel=info
