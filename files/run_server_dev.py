@@ -41,12 +41,6 @@ def create_test_user():
     u.save()
 
 
-def run_nginx_in_background():
-    logging.info('Starting nginx...')
-    os.mkdir('/run/nginx')
-    subprocess.Popen(['nginx'])
-
-
 def run_supervisor():
     logging.info('Running supervisord...')
     return subprocess.call(['supervisord', '-c', '/etc/supervisor/supervisord.conf'])
@@ -61,7 +55,6 @@ def main():
     wait_for_connection()
     migrate_to_latest_models()
     create_test_user()
-    run_nginx_in_background()
     return run_supervisor()
 
 

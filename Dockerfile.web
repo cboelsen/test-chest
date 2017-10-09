@@ -15,24 +15,18 @@ RUN /var/lib/test-chest-env/bin/pip install -r /tmp/requirements.txt && \
 
 COPY . /tmp/test-chest-install-files
 WORKDIR /tmp/test-chest-install-files
-RUN tox && rm .tox -rf
 RUN python setup.py sdist && /var/lib/test-chest-env/bin/pip install dist/*
+RUN tox && rm .tox -rf
 
 FROM python:3.5-alpine
 
 RUN apk update && \
-    apk add postgresql-dev supervisor nginx && \
+    apk add postgresql-dev supervisor && \
     rm /var/cache/* -rf
 
 COPY --from=build /var/lib/test-chest-env /var/lib/test-chest-env
 
 COPY files/supervisor /etc/supervisor
-COPY files/nginx.conf /etc/nginx/
-COPY files/run_server_dev.py /var/lib/test-chest-env/bin/
+COPY files/run_server_dev.py /tmp/
 
-RUN /var/lib/test-chest-env/bin/test-chest collectstatic \
-    --noinput \
-    --clear \
-    --settings test_chest_project.test_chest_project.settings.dev
-
-ENTRYPOINT ["/var/lib/test-chest-env/bin/python", "-u", "/var/lib/test-chest-env/bin/run_server_dev.py"]
+ENTRYPOINT ["/var/lib/test-chest-env/bin/python", "-u", "/tmp/run_server_dev.py"]

@@ -8,7 +8,9 @@ services:
     volumes:
       - ./db:/var/lib/postgresql/data
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.web
     environment:
         <<: *PG_ENV
     depends_on:
@@ -18,11 +20,21 @@ services:
     labels:
       - "traefik.backend=test-chest-backend"
       - "traefik.frontend.rule=Host: localhost"
+      - "traefik.port=8000"
+  static:
+    build:
+      context: .
+      dockerfile: Dockerfile.static
+    labels:
+      - "traefik.backend=test-chest-static-backend"
+      - "traefik.frontend.rule=Host: localhost; PathPrefix: /static"
       - "traefik.port=80"
   proxy:
     image: traefik
     ports:
       - 3456:80
+      - 8080:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./files/traefik.toml:/etc/traefik/traefik.toml
     command: --docker --loglevel=info
